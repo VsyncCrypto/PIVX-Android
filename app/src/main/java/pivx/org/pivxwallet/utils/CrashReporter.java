@@ -38,6 +38,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
+import global.PivxModuleImp;
+import host.furszy.zerocoinj.wallet.MultiWallet;
 import pivx.org.pivxwallet.PivxApplication;
 import pivx.org.pivxwallet.module.PivxContext;
 
@@ -99,6 +101,9 @@ public class CrashReporter {
 	public static void appendSavedBackgroundTraces(final Appendable report) throws IOException
 	{
 		BufferedReader reader = null;
+		if (!backgroundTracesFile.exists()){
+			backgroundTracesFile.createNewFile();
+		}
 		try
 		{
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(backgroundTracesFile), Charsets.UTF_8));
@@ -250,7 +255,30 @@ public class CrashReporter {
 		report.append(
 				"Time of backup: " + (lastBackupTime > 0 ? String.format(Locale.US, "%tF %tT %tZ", calendar, calendar, calendar) : "none") + "\n");
 		report.append("Network: " + PivxContext.NETWORK_PARAMETERS.getId() + "\n");
-		final Wallet wallet = application.getModule().getWallet();
+
+
+
+		final MultiWallet multiWallet = ((PivxModuleImp)application.getModule()).getWallet();
+
+		report.append("############ PIV WALLET ########################");
+		addWalletInformation(multiWallet.getPivWallet(), report);
+		report.append("############ ZPIV WALLET ########################");
+		addWalletInformation(multiWallet.getZpivWallet(), report);
+
+		report.append("Databases:");
+		for (final String db : application.databaseList())
+			report.append(" " + db);
+		report.append("\n");
+
+		final File filesDir = application.getFilesDir();
+		report.append("\nContents of FilesDir " + filesDir + ":\n");
+		appendDir(report, filesDir, 0);
+		final File logDir = application.getDir("log", Context.MODE_PRIVATE);
+		report.append("\nContents of LogDir " + logDir + ":\n");
+		appendDir(report, logDir, 0);
+	}
+
+	private static void addWalletInformation(Wallet wallet, Appendable report) throws IOException {
 		report.append("Encrypted: " + wallet.isEncrypted() + "\n");
 		report.append("Keychain size: " + wallet.getKeyChainGroupSize() + "\n");
 
@@ -273,18 +301,6 @@ public class CrashReporter {
 		report.append("Inputs: " + numInputs + "\n");
 		report.append("Outputs: " + numOutputs + " (spent: " + numSpentOutputs + ")\n");
 		report.append("Last block seen: " + wallet.getLastBlockSeenHeight() + " (" + wallet.getLastBlockSeenHash() + ")\n");
-
-		report.append("Databases:");
-		for (final String db : application.databaseList())
-			report.append(" " + db);
-		report.append("\n");
-
-		final File filesDir = application.getFilesDir();
-		report.append("\nContents of FilesDir " + filesDir + ":\n");
-		appendDir(report, filesDir, 0);
-		final File logDir = application.getDir("log", Context.MODE_PRIVATE);
-		report.append("\nContents of LogDir " + logDir + ":\n");
-		appendDir(report, logDir, 0);
 	}
 
 	private static void appendDir(final Appendable report, final File file, final int indent) throws IOException

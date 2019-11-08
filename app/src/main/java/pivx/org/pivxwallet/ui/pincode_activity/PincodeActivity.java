@@ -14,9 +14,11 @@ import java.util.Random;
 import global.PivtrumGlobalData;
 import pivtrum.PivtrumPeerData;
 import pivx.org.pivxwallet.R;
+import pivx.org.pivxwallet.module.PivxContext;
 import pivx.org.pivxwallet.ui.backup_mnemonic_activity.MnemonicActivity;
 import pivx.org.pivxwallet.ui.base.BaseActivity;
-import pivx.org.pivxwallet.ui.settings_pincode_activity.KeyboardFragment;
+import pivx.org.pivxwallet.ui.loading.LoadingActivity;
+import pivx.org.pivxwallet.ui.settings.settings_pincode_activity.KeyboardFragment;
 import pivx.org.pivxwallet.ui.start_activity.StartActivity;
 
 import static pivx.org.pivxwallet.ui.backup_mnemonic_activity.MnemonicActivity.INTENT_EXTRA_INIT_VIEW;
@@ -28,6 +30,7 @@ import static pivx.org.pivxwallet.ui.backup_mnemonic_activity.MnemonicActivity.I
 public class PincodeActivity extends BaseActivity implements KeyboardFragment.onKeyListener {
 
     public static final String CHECK_PIN = "check_pin";
+    private static final int REQUEST_LOADING = 201;
 
     private boolean checkPin = false;
 
@@ -50,7 +53,7 @@ public class PincodeActivity extends BaseActivity implements KeyboardFragment.on
         }
 
         getLayoutInflater().inflate(R.layout.fragment_pincode, container);
-        setTitle("Create Pin");
+        setTitle(R.string.title_pincode);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -61,23 +64,27 @@ public class PincodeActivity extends BaseActivity implements KeyboardFragment.on
         keyboardFragment = (KeyboardFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_keyboard);
         keyboardFragment.setOnKeyListener(this);
         keyboardFragment.setTextButtonsColor(Color.WHITE);
+        int clearID = getResources().getIdentifier(String.valueOf(R.drawable.ic_keyboard_clear_white), "drawable", getPackageName());
+        int nextID = getResources().getIdentifier(String.valueOf(R.drawable.ic_keyboard_next_white), "drawable", getPackageName());
+        keyboardFragment.setNextButton(nextID);
+        keyboardFragment.setBackButton(clearID);
     }
 
     private void goNext() {
-        if (pivxApplication.getAppConf().getTrustedNode()==null){
+        if (pivxApplication.getAppConf().getTrustedNode() == null){
             // select random trusted node
-            List<PivtrumPeerData> nodes = PivtrumGlobalData.listTrustedHosts();
-            Random random = new Random();
-            pivxApplication.setTrustedServer(nodes.get(random.nextInt(nodes.size())));
-            pivxApplication.stopBlockchain();
+            //List<PivtrumPeerData> nodes = PivtrumGlobalData.listTrustedHosts(PivxContext.NETWORK_PARAMETERS ,PivxContext.NETWORK_PARAMETERS.getPort());
+            //Random random = new Random();
+            //pivxApplication.setTrustedServer(nodes.get(random.nextInt(nodes.size())));
+            if (pivxModule.isStarted())
+                pivxApplication.stopBlockchain();
         }
 
         pivxApplication.getAppConf().setAppInit(true);
 
-        Intent myIntent = new Intent(PincodeActivity.this,MnemonicActivity.class);
+        Intent myIntent = new Intent(PincodeActivity.this, LoadingActivity.class);
         myIntent.putExtra(INTENT_EXTRA_INIT_VIEW,true);
-        startActivity(myIntent);
-        finish();
+        startActivityForResult(myIntent, REQUEST_LOADING);
     }
 
 
@@ -122,7 +129,7 @@ public class PincodeActivity extends BaseActivity implements KeyboardFragment.on
     public void onBackPressed() {
         super.onBackPressed();
         // todo: controlar esto
-        if (pivxApplication.getAppConf().getPincode()==null){
+        if (pivxApplication.getAppConf().getPincode() == null){
             startActivity(new Intent(this, StartActivity.class));
             finish();
         }
@@ -168,5 +175,21 @@ public class PincodeActivity extends BaseActivity implements KeyboardFragment.on
                 i4.setImageResource(R.drawable.pin_circle);
                 break;
         }
+    }
+
+    @Override
+    public boolean isCoreNeeded() {
+        return false;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_LOADING){
+            Intent myIntent = new Intent(PincodeActivity.this, MnemonicActivity.class);
+            myIntent.putExtra(INTENT_EXTRA_INIT_VIEW,true);
+            startActivity(myIntent);
+            finish();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }

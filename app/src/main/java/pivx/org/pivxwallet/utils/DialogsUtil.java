@@ -58,9 +58,9 @@ public class DialogsUtil {
         dialog.setTitle(title);
         dialog.setBody(body);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            dialog.setOkBtnBackgroundColor(context.getResources().getColor(R.color.lightGreen, null));
+            dialog.setOkBtnBackgroundColor(context.getResources().getColor(R.color.colorPurple, null));
         }else {
-            dialog.setOkBtnBackgroundColor(ContextCompat.getColor(context, R.color.lightGreen));
+            dialog.setOkBtnBackgroundColor(ContextCompat.getColor(context, R.color.colorPurple));
         }
         dialog.setOkBtnTextColor(Color.WHITE);
         dialog.setRootBackgroundRes(R.drawable.dialog_bg);
@@ -80,9 +80,9 @@ public class DialogsUtil {
         dialog.setListener(simpleTwoBtnsDialogListener);
         dialog.setContainerBtnsBackgroundColor(Color.WHITE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            dialog.setRightBtnBackgroundColor(context.getResources().getColor(R.color.lightGreen, null));
+            dialog.setRightBtnBackgroundColor(context.getResources().getColor(R.color.colorPurple, null));
         }else {
-            dialog.setRightBtnBackgroundColor(ContextCompat.getColor(context,R.color.lightGreen));
+            dialog.setRightBtnBackgroundColor(ContextCompat.getColor(context,R.color.colorPurple));
         }
         dialog.setLeftBtnTextColor(Color.BLACK);
         dialog.setRightBtnTextColor(Color.WHITE);
@@ -102,7 +102,7 @@ public class DialogsUtil {
         final EditText editHost = (EditText) dialogView.findViewById(R.id.hostText);
         final EditText editTcp = (EditText) dialogView.findViewById(R.id.tcpText);
         final EditText editSsl = (EditText) dialogView.findViewById(R.id.sslText);
-        nodeDialog.setTitle("Add your Node");
+        nodeDialog.setTitle(R.string.title_add_node);
         nodeDialog.setView(dialogView);
         nodeDialog.setPositiveButton("Add Node", new DialogInterface.OnClickListener() {
 
@@ -128,36 +128,30 @@ public class DialogsUtil {
 
                     final int finalTcpPort = tcpPort;
                     final int finalSslPort = sslPort;
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            final boolean check = checkHost(host, finalTcpPort);
-                            flag.set(false);
-                            context.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if(check){
-                                        trustedNodeDialogListener.onNodeSelected(
-                                                new PivtrumPeerData(
-                                                        host,
-                                                        finalTcpPort,
-                                                        finalSslPort)
-                                        );
-                                    }else {
-                                        Toast.makeText(context, R.string.invalid_host, Toast.LENGTH_SHORT).show();
-                                    }
-                                    if (dialog!=null)
-                                        dialog.dismiss();
-                                }
-                            });
-                        }
+                    new Thread(() -> {
+                        final boolean check = checkHost(host, finalTcpPort);
+                        flag.set(false);
+                        context.runOnUiThread(() -> {
+                            if(check){
+                                trustedNodeDialogListener.onNodeSelected(
+                                        new PivtrumPeerData(
+                                                host,
+                                                finalTcpPort,
+                                                finalSslPort)
+                                );
+                            }else {
+                                Toast.makeText(context, R.string.invalid_host, Toast.LENGTH_SHORT).show();
+                            }
+                            if (dialog!=null)
+                                dialog.dismiss();
+                        });
                     }).start();
                 }
             }
 
             private boolean checkHost(String host, int tcpPort) {
                 if (host.equals(""))return false;
-                if (host.startsWith("192.")) return true; // localhost
+                //if (host.startsWith("192.")) return true; // localhost
                 SocketAddress sockaddr = new InetSocketAddress(host,tcpPort);
                 Socket sock = new Socket();
                 // This method will block no more than timeoutMs.
@@ -173,12 +167,7 @@ public class DialogsUtil {
                 }
             }
         });
-        nodeDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+        nodeDialog.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
         return nodeDialog;
     }
 

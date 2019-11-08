@@ -19,6 +19,7 @@ import java.util.List;
 
 import pivx.org.pivxwallet.R;
 import pivx.org.pivxwallet.ui.base.BaseActivity;
+import pivx.org.pivxwallet.ui.loading.LoadingActivity;
 import pivx.org.pivxwallet.ui.wallet_activity.WalletActivity;
 
 /**
@@ -30,7 +31,6 @@ public class MnemonicActivity extends BaseActivity {
     public static final String INTENT_EXTRA_INIT_VIEW = "init_view";
 
     private FlexboxLayout txt_words;
-    private View container_continue_btn;
     private Button btn_continue;
     private int margin = 100;
     private boolean isInit = false;
@@ -44,20 +44,16 @@ public class MnemonicActivity extends BaseActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         getLayoutInflater().inflate(R.layout.security_words_show, container);
-        setTitle("Mnemonic code");
+        setTitle(R.string.title_mnemonic_code);
 
-        container_continue_btn = findViewById(R.id.container_continue_btn);
         if (!isInit){
-            container_continue_btn.setVisibility(View.GONE);
+            findViewById(R.id.btn_continue).setVisibility(View.GONE);
         }else {
             btn_continue = (Button) findViewById(R.id.btn_continue);
-            btn_continue.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(v.getContext(), WalletActivity.class);
-                    startActivity(intent);
-                    finish();
-                }
+            btn_continue.setOnClickListener(v -> {
+                Intent intent = new Intent(v.getContext(), WalletActivity.class);
+                startActivity(intent);
+                finish();
             });
         }
 
@@ -71,9 +67,10 @@ public class MnemonicActivity extends BaseActivity {
             llp.setMargins(0, 40, 20, 0);
             textView.setLayoutParams(llp);
             textView.setTextColor(Color.BLACK);
-            textView.setBackgroundResource(R.drawable.bg_button_grey);
-            textView.setPadding(10,8,10,8);
+            textView.setBackgroundResource(R.drawable.bg_inputs_primary);
+            textView.setPadding(18,8,18,8);
             textView.setText(word);
+            textView.setTextSize(15);
             txt_words.addView(textView);
         }
 

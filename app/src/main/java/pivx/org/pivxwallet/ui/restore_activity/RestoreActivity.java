@@ -19,8 +19,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.apache.commons.codec.Charsets;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,6 +27,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -57,6 +57,7 @@ public class RestoreActivity extends BaseActivity {
     private static final int OPTIONS_ADVANCE = 2;
     private static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL = 502;
     private View root;
+    private TextView text_spinner;
     private TextInputEditText edit_password;
     private Spinner spinnerFiles;
     private TextView restoreMessage;
@@ -88,11 +89,11 @@ public class RestoreActivity extends BaseActivity {
     @Override
     protected void onCreateView(Bundle savedInstanceState, ViewGroup container) {
         root = getLayoutInflater().inflate(R.layout.fragment_settings_restore, container);
-        setTitle("Restore wallet");
+        setTitle(R.string.title_restore_wallet);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        if (getIntent()!=null){
-            if (getIntent().getAction()!=null) {
+        if (getIntent() != null){
+            if (getIntent().getAction() != null) {
                 if (getIntent().getAction().equals(ACTION_RESTORE_AND_JUMP_TO_WIZARD)){
                     jumpToWizard = true;
                 }
@@ -100,15 +101,12 @@ public class RestoreActivity extends BaseActivity {
         }
 
         btn_restore = (Button) findViewById(R.id.btn_restore);
-        btn_restore.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                restore();
-            }
-        });
+        btn_restore.setOnClickListener(v -> restore());
         progress = (ProgressBar) root.findViewById(R.id.progress);
         restoreMessage = (TextView) root.findViewById(R.id.restoreMessage);
         edit_password = (TextInputEditText) root.findViewById(R.id.edit_password);
+        text_spinner = (TextView) root.findViewById(R.id.text_spinner);
+        text_spinner.setVisibility(View.GONE);
         spinnerFiles = (Spinner) root.findViewById(R.id.spinner_files);
         fileAdapter = new FileAdapter(this) {
             @Override
@@ -138,6 +136,7 @@ public class RestoreActivity extends BaseActivity {
 
                 return row;
             }
+
         };
         final String path;
         final String backupPath = PivxContext.Files.EXTERNAL_WALLET_BACKUP_DIR.getAbsolutePath();
@@ -178,57 +177,31 @@ public class RestoreActivity extends BaseActivity {
                             //module.restorePrivateKeysFromBase58(file);
                         } else if (Crypto.OPENSSL_FILE_FILTER.accept(file)) {
                             try {
-                                pivxModule.restoreWalletFromEncrypted(file, password);
+                                // TODO: Add a force restoration version number here..
+                                pivxModule.restoreWalletFromEncrypted(file, password, -1);
                                 showRestoreSucced();
                             } catch (final CantRestoreEncryptedWallet x) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        DialogsUtil.buildSimpleErrorTextDialog(
-                                                RestoreActivity.this,
-                                                getString(R.string.import_export_keys_dialog_failure_title),
-                                                getString(R.string.import_keys_dialog_failure, x.getMessage())
-                                        ).setOkBtnClickListener(new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View v) {
-                                                restore();
-                                            }
-                                        }).show(getFragmentManager(), getString(R.string.restore_dialog_error));
-                                    }
-                                });
+                                runOnUiThread(() -> DialogsUtil.buildSimpleErrorTextDialog(
+                                        RestoreActivity.this,
+                                        getString(R.string.import_export_keys_dialog_failure_title),
+                                        getString(R.string.import_keys_dialog_failure, x.getMessage())
+                                ).setOkBtnClickListener(v -> restore()).show(getFragmentManager(), getString(R.string.restore_dialog_error)));
+
                             } catch (Exception e) {
-                                e.printStackTrace();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show();
-                                    }
-                                });
+                                LoggerFactory.getLogger(RestoreActivity.class).info("Exception restoring wallet",e);
+                                runOnUiThread(() -> Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show());
                             }
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show();
-                            }
-                        });
+                        LoggerFactory.getLogger(RestoreActivity.class).info("Exception restoring wallet",e);
+                        runOnUiThread(() -> Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show());
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show();
-                            }
-                        });
+                        LoggerFactory.getLogger(RestoreActivity.class).info("Exception restoring wallet",e);
+                        runOnUiThread(() -> Toast.makeText(RestoreActivity.this, R.string.cannot_restore_wallet, Toast.LENGTH_LONG).show());
                     }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progress.setVisibility(View.GONE);
-                            flag.set(false);
-                        }
+                    runOnUiThread(() -> {
+                        progress.setVisibility(View.GONE);
+                        flag.set(false);
                     });
                 }
             }).start();
@@ -236,31 +209,24 @@ public class RestoreActivity extends BaseActivity {
     }
 
     private void showRestoreSucced() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+        runOnUiThread(() -> {
+            try {
                 String message = getString(R.string.restore_wallet_dialog_success_replay);
 
-                SimpleTextDialog simpleTextDialog = DialogsUtil.buildSimpleTextDialog(RestoreActivity.this,getString(R.string.restore_wallet_dialog_success),message);
-                simpleTextDialog.setOkBtnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (jumpToWizard){
-                            startActivity(new Intent(RestoreActivity.this, TutorialActivity.class));
-                        }
-                        finish();
+                SimpleTextDialog simpleTextDialog = DialogsUtil.buildSimpleTextDialog(RestoreActivity.this, getString(R.string.restore_wallet_dialog_success), message);
+                simpleTextDialog.setOkBtnClickListener(v -> {
+                    if (jumpToWizard) {
+                        startActivity(new Intent(RestoreActivity.this, TutorialActivity.class));
                     }
+                    finish();
                 });
-                simpleTextDialog.setListener(new DialogListener() {
-                    @Override
-                    public void cancel(boolean isActionCompleted) {
-                        if (jumpToWizard){
-                            startActivity(new Intent(RestoreActivity.this, TutorialActivity.class));
-                        }
-                        finish();
+                simpleTextDialog.setListener(isActionCompleted -> {
+                    if (jumpToWizard) {
+                        startActivity(new Intent(RestoreActivity.this, TutorialActivity.class));
                     }
+                    finish();
                 });
-                simpleTextDialog.show(getFragmentManager(),getResources().getString(R.string.restore_dialog_tag));
+                simpleTextDialog.show(getFragmentManager(), getResources().getString(R.string.restore_dialog_tag));
 
                 if (!jumpToWizard) {
                     new Handler().postDelayed(new Runnable() {
@@ -270,6 +236,8 @@ public class RestoreActivity extends BaseActivity {
                         }
                     }, TimeUnit.SECONDS.toMillis(5));
                 }
+            }catch (Exception e){
+                LoggerFactory.getLogger(RestoreActivity.class).error("on restore dialog error",e);
             }
         });
     }
@@ -350,8 +318,9 @@ public class RestoreActivity extends BaseActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //backup
-                    restore();
+                    //restoe
+                    //restore();
+                    Toast.makeText(this, R.string.permission_granted, Toast.LENGTH_SHORT).show();
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
@@ -371,8 +340,8 @@ public class RestoreActivity extends BaseActivity {
         public boolean accept(final File file) {
             BufferedReader reader = null;
             try {
-                if (file==null)return false;
-                reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charsets.UTF_8));
+                if (file == null)return false;
+                reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                 WalletUtils.readKeys(reader, PivxContext.NETWORK_PARAMETERS,PivxContext.BACKUP_MAX_CHARS);
                 return true;
             } catch (final IOException x) {
@@ -388,4 +357,9 @@ public class RestoreActivity extends BaseActivity {
             }
         }
     };
+
+    @Override
+    public boolean isCoreNeeded() {
+        return !jumpToWizard;
+    }
 }

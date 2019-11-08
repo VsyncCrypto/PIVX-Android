@@ -19,16 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pivx.org.pivxwallet.R;
-import pivx.org.pivxwallet.contacts.AddressLabel;
+import global.AddressLabel;
 import pivx.org.pivxwallet.ui.base.BaseRecyclerFragment;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerAdapter;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerViewHolder;
-import pivx.org.pivxwallet.utils.scanner.ScanActivity;
 
 import static android.Manifest.permission_group.CAMERA;
 import static android.app.Activity.RESULT_OK;
-import static pivx.org.pivxwallet.utils.scanner.ScanActivity.INTENT_EXTRA_RESULT;
-
+import de.schildbach.wallet.ui.scan.ScanActivity;
+import static de.schildbach.wallet.ui.scan.ScanActivity.INTENT_EXTRA_RESULT;
 /**
  * Created by furszy on 8/4/17.
  * todo: agregar el change listener y pintar de rojo cuando un valor está mal..

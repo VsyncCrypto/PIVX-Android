@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.pivxj.core.Coin;
+import org.pivxj.core.CoinDefinition;
 import org.pivxj.utils.MonetaryFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +20,16 @@ import java.util.Comparator;
 import java.util.List;
 
 import pivx.org.pivxwallet.R;
-import pivx.org.pivxwallet.rate.db.PivxRate;
+import global.PivxRate;
 import pivx.org.pivxwallet.ui.base.BaseRecyclerFragment;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerAdapter;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerViewHolder;
 import pivx.org.pivxwallet.ui.base.tools.adapter.ListItemListeners;
 import pivx.org.pivxwallet.ui.transaction_detail_activity.TransactionDetailActivity;
+import global.wrappers.TransactionWrapper;
 
 import static pivx.org.pivxwallet.ui.transaction_detail_activity.FragmentTxDetail.IS_DETAIL;
+import static pivx.org.pivxwallet.ui.transaction_detail_activity.FragmentTxDetail.IS_ZPIV_WALLET;
 import static pivx.org.pivxwallet.ui.transaction_detail_activity.FragmentTxDetail.TX_WRAPPER;
 import static pivx.org.pivxwallet.utils.TxUtils.getAddressOrContact;
 
@@ -41,25 +44,49 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
     private PivxRate pivxRate;
     private MonetaryFormat coinFormat = MonetaryFormat.BTC;
     private int scale = 3;
-
+    private Boolean isPrivate = false;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = super.onCreateView(inflater, container, savedInstanceState);
-        setEmptyView(R.drawable.img_transaction_empty);
-        setEmptyText("You don't have any transfers yet.");
+
+        Intent intent = getActivity().getIntent();
+        if (intent != null && intent.hasExtra("Private")) {
+            isPrivate = intent.getBooleanExtra("Private",false);
+        }
         setEmptyTextColor(Color.parseColor("#cccccc"));
+
+        init();
         return view;
+    }
+
+    private void init(){
+        if (isPrivate) {
+            setEmptyView(R.drawable.img_zpiv_transaction_empty);
+            setEmptyText(getString(R.string.empty_zpiv_transactions));
+
+        } else {
+            setEmptyView(R.drawable.img_transaction_empty);
+            setEmptyText(getString(R.string.no_transactions));
+        }
+    }
+
+    public void change(boolean isPrivate){
+        this.isPrivate = isPrivate;
+        init();
+        refresh();
     }
 
     @Override
     protected List<TransactionWrapper> onLoading() {
-        List<TransactionWrapper> list = pivxModule.listTx();
-        Collections.sort(list, new Comparator<TransactionWrapper>(){
-            public int compare(TransactionWrapper o1, TransactionWrapper o2){
-                if(o1.getTransaction().getUpdateTime().getTime() == o2.getTransaction().getUpdateTime().getTime())
-                    return 0;
-                return o1.getTransaction().getUpdateTime().getTime() > o2.getTransaction().getUpdateTime().getTime() ? -1 : 1;
-            }
+        List<TransactionWrapper> list = null;
+        if (isPrivate){
+            list = pivxModule.listPrivateTxes();
+        }else
+            list = pivxModule.listTx();
+        Collections.sort(list, (o1, o2) -> {
+            if(o1.getTransaction().getUpdateTime().getTime() == o2.getTransaction().getUpdateTime().getTime())
+                return 0;
+            return o1.getTransaction().getUpdateTime().getTime() > o2.getTransaction().getUpdateTime().getTime() ? -1 : 1;
         });
         return list;
     }
@@ -80,7 +107,7 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
             @Override
             protected void bindHolder(TransactionViewHolderBase holder, TransactionWrapper data, int position) {
                 String amount = data.getAmount().toFriendlyString();
-                if (amount.length()<=10){
+                if (amount.length() <= 10){
                     holder.txt_scale.setVisibility(View.GONE);
                     holder.amount.setText(amount);
                 }else {
@@ -90,11 +117,11 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
                 }
 
                 String localCurrency = null;
-                if (pivxRate!=null) {
+                if (pivxRate != null) {
                     localCurrency = pivxApplication.getCentralFormats().format(
-                                    new BigDecimal(data.getAmount().getValue() * pivxRate.getValue().doubleValue()).movePointLeft(8)
+                                    new BigDecimal(data.getAmount().getValue() * pivxRate.getRate().doubleValue()).movePointLeft(8)
                                     )
-                                    + " " + pivxRate.getCoin();
+                                    + " " + pivxRate.getCode();
                     holder.amountLocal.setText(localCurrency);
                     holder.amountLocal.setVisibility(View.VISIBLE);
                 }else {
@@ -102,20 +129,31 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
                 }
 
 
-                holder.description.setText(data.getTransaction().getMemo());
-
                 if (data.isSent()){
-                    //holder.cv.setBackgroundColor(Color.RED);Color.GREEN
-                    holder.imageView.setImageResource(R.mipmap.ic_transaction_send);
+                    holder.imageView.setImageResource(R.drawable.ic_transaction_send);
                     holder.amount.setTextColor(ContextCompat.getColor(context, R.color.red));
+                }else if (data.isZcSpend()) {
+                    if (data.isPrivate()){
+                        holder.imageView.setImageResource(R.drawable.ic_transaction_send_zpiv);
+                    }else {
+                        holder.imageView.setImageResource(R.drawable.ic_transaction_receive_zpiv);
+                    }
+                    holder.amount.setTextColor(ContextCompat.getColor(context,data.isPrivate() ? R.color.red : R.color.green));
+                }else if (data.isZcMint()){
+                    holder.imageView.setImageResource(R.drawable.ic_transaction_convert_zpiv);
+                    holder.amount.setTextColor(ContextCompat.getColor(context, data.isPrivate() ? R.color.green : R.color.red));
                 }else if (!data.isStake()){
                     holder.imageView.setImageResource(R.mipmap.ic_transaction_receive);
                     holder.amount.setTextColor(ContextCompat.getColor(context, R.color.green));
-                }else {
+                } else {
                     holder.imageView.setImageResource(R.drawable.ic_transaction_mining);
                     holder.amount.setTextColor(ContextCompat.getColor(context, R.color.green));
                 }
-                holder.title.setText(getAddressOrContact(pivxModule,data));
+
+                if (data.isZcMint()){
+                    holder.title.setText(R.string.zerocoin_mint);
+                }else
+                    holder.title.setText(getAddressOrContact(pivxModule,data));
 
                 /*if (data.getOutputLabels()!=null && !data.getOutputLabels().isEmpty()){
                     AddressLabel contact = data.getOutputLabels().get(0);
@@ -131,7 +169,26 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
                     holder.title.setText(data.getTransaction().getOutput(0).getScriptPubKey().getToAddress(pivxModule.getConf().getNetworkParams()).toBase58());
                 }*/
                 String memo = data.getTransaction().getMemo();
-                holder.description.setText(memo!=null?memo:"No description");
+                holder.description.setText( (memo != null && !memo.equals("") ) ? memo : "No description");
+
+                int spendableDepth;
+                int drawableRes;
+                if (!data.isZcMint()){
+                    spendableDepth = 2; // todo: Get this data from pivxj..
+                    drawableRes = R.drawable.ic_transaction_zpiv_pending;
+                }else {
+                    spendableDepth = CoinDefinition.MINT_REQUIRED_CONFIRMATIONS;
+                    drawableRes = R.drawable.ic_transaction_piv_pending;
+                }
+
+                if (data.getTransaction().getConfidence().getDepthInBlocks() < spendableDepth){
+                    holder.img_pending.setVisibility(View.VISIBLE);
+                    holder.img_pending.setImageResource(drawableRes);
+                }else {
+                    holder.img_pending.setVisibility(View.GONE);
+                }
+
+
             }
         };
         adapter.setListEventListener(new ListItemListeners<TransactionWrapper>() {
@@ -141,6 +198,8 @@ public class TransactionsFragmentBase extends BaseRecyclerFragment<TransactionWr
                 Bundle bundle = new Bundle();
                 bundle.putSerializable(TX_WRAPPER,data);
                 bundle.putBoolean(IS_DETAIL,true);
+                bundle.putBoolean(IS_ZPIV_WALLET, isPrivate);
+                bundle.putBoolean("Private", isPrivate);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }

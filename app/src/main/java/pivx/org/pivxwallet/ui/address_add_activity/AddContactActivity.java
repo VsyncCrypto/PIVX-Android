@@ -17,13 +17,12 @@ import android.widget.Toast;
 import org.pivxj.uri.PivxURI;
 
 import pivx.org.pivxwallet.R;
-import pivx.org.pivxwallet.contacts.AddressLabel;
-import pivx.org.pivxwallet.module.ContactAlreadyExistException;
+import global.AddressLabel;
+import global.exceptions.ContactAlreadyExistException;
 import pivx.org.pivxwallet.ui.base.BaseActivity;
-import pivx.org.pivxwallet.utils.scanner.ScanActivity;
-
+import de.schildbach.wallet.ui.scan.ScanActivity;
+import static de.schildbach.wallet.ui.scan.ScanActivity.INTENT_EXTRA_RESULT;
 import static android.Manifest.permission_group.CAMERA;
-import static pivx.org.pivxwallet.utils.scanner.ScanActivity.INTENT_EXTRA_RESULT;
 
 /**
  * Created by Neoperol on 6/8/17.
@@ -67,7 +66,7 @@ public class AddContactActivity extends BaseActivity implements View.OnClickList
                 String temp = s.toString();
                 if(pivxModule.chechAddress(temp)){
                     address = temp;
-                    edit_address.setTextColor(Color.parseColor("#55476c"));;
+                    edit_address.setTextColor(Color.parseColor("#5c4c7c"));;
                 }else {
                     edit_address.setTextColor(Color.parseColor("#4d4d4d"));;
                 }

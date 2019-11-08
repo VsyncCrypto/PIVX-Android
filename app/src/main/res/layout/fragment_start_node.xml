@@ -27,46 +27,61 @@
         android:paddingEnd="12dp"
         >
 
-        <Spinner
-            android:gravity="center_vertical"
-            android:id="@+id/spinner"
+        <RelativeLayout
+            android:background="@drawable/bg_inputs_primary_white"
             android:layout_width="match_parent"
-            style="@style/spinner_style"
-            android:paddingTop="7dp"
-            android:paddingBottom="7dp"
-            android:popupBackground="#ffffff"
-            android:layout_height="wrap_content"
-            android:prompt="@string/select"/>
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:gravity="center_vertical">
+
+            <Spinner
+                android:gravity="center_vertical"
+                android:id="@+id/spinner"
+                android:layout_width="match_parent"
+                style="@style/spinner_style"
+                android:popupBackground="#ffffff"
+                android:layout_height="wrap_content"
+                android:prompt="@string/select"/>
+
+        </RelativeLayout>
 
         <Button
             android:id="@+id/openDialog"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="20dp"
-            android:elevation="0dp"
-            android:background="@color/transparent"
+            android:layout_marginTop="20dp"
             android:text="@string/btn_select_node"
-            android:textColor="@color/mainGreen"
-            android:textSize="15sp" />
+            style="@style/ButtonTextTransparent" />
+
+        <Button
+            android:id="@+id/btn_dns_discovery"
+            android:layout_marginTop="20dp"
+            android:text="@string/settings_node_dns_discovery"
+            style="@style/ButtonTextTransparent" />
+
+        <Button
+            android:id="@+id/btn_default"
+            android:layout_marginTop="20dp"
+            android:text="@string/node_default"
+            style="@style/ButtonTextTransparent" />
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btnSelectNode"
+    <LinearLayout
+        android:layout_weight="1"
+        android:layout_width="fill_parent"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical|center_horizontal"
-        android:background="@drawable/button_selector"
-        android:text="@string/select_node"
-        android:elevation="2dp"
-        android:layout_marginBottom="12dp"
-        android:paddingBottom="12dp"
-        android:paddingTop="12dp"
-        android:translationZ="2dp"
-        android:stateListAnimator="@null"
-        android:textColor = "@color/textColorPurple"
-        android:textSize="14sp"
-        />
+        android:layout_centerHorizontal="true"
+        android:gravity="bottom|center"
+        android:background="@android:color/transparent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/btnSelectNode"
+            android:text="@string/save"
+            style="@style/ButtonPrimaryWhite"
+            />
+
+    </LinearLayout>
 
 </RelativeLayout>

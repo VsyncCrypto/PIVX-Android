@@ -24,10 +24,22 @@ import static pivx.org.pivxwallet.module.PivxContext.PEER_TIMEOUT_MS;
 public class WalletConfImp extends Configurations implements WalletConfiguration {
 
     private static final String PREF_TRUSTED_NODE = "trusted_node";
+    private static final String PREF_TRUSTED_NODE_PORT = "trusted_node_port";
     private static final String PREFS_KEY_SCHEDULE_BLOCKCHAIN_SERVICE = "sch_block_serv";
+    private static final String PREF_CURRENCY_RATE = "currency_code";
+    private static final String PREF_BEST_CHAIN_HEIGHT = "best_chain_height";
+    private static final String IS_DNS_DISCOVERY_ENABLED = "is_dns_discovery";
 
     public WalletConfImp(SharedPreferences prefs) {
         super(prefs);
+    }
+
+    public void setDSNDiscovery(boolean isEnabled) {
+        save(IS_DNS_DISCOVERY_ENABLED,isEnabled);
+    }
+
+    public boolean isDNSDiscoveryEnabled(){
+        return getBoolean(IS_DNS_DISCOVERY_ENABLED, PivxContext.IS_DNS_DISCOVERY_ENABLED_BY_DEFAULT);
     }
 
     @Override
@@ -38,6 +50,13 @@ public class WalletConfImp extends Configurations implements WalletConfiguration
     @Override
     public void saveTrustedNode(String host, int port) {
         save(PREF_TRUSTED_NODE,host);
+        save(PREF_TRUSTED_NODE_PORT,port);
+    }
+
+    @Override
+    public void cleanTrustedNode() {
+        remove(PREF_TRUSTED_NODE);
+        remove(PREF_TRUSTED_NODE_PORT);
     }
 
     @Override
@@ -52,7 +71,7 @@ public class WalletConfImp extends Configurations implements WalletConfiguration
 
     @Override
     public int getTrustedNodePort() {
-        return PivxContext.NETWORK_PARAMETERS.getPort();
+        return getInt(PREF_TRUSTED_NODE_PORT,PivxContext.NETWORK_PARAMETERS.getPort());
     }
 
     @Override
@@ -123,6 +142,15 @@ public class WalletConfImp extends Configurations implements WalletConfiguration
     @Override
     public int getProtocolVersion() {
         return NETWORK_PARAMETERS.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT);
+    }
+
+    @Override
+    public void maybeIncrementBestChainHeightEver(int lastBlockSeenHeight) {
+        save(PREF_BEST_CHAIN_HEIGHT, lastBlockSeenHeight);
+    }
+
+    public int getBestChainHeightEver(){
+        return getInt(PREF_BEST_CHAIN_HEIGHT,0);
     }
 
 }

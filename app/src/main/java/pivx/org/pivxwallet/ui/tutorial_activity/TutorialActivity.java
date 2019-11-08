@@ -77,13 +77,11 @@ public class TutorialActivity extends AppCompatActivity implements View.OnClickL
 
     }
 
-    public  void btnSkipClick(View v)
-    {
+    public  void btnSkipClick(View v) {
         launchHomeScreen();
     }
 
-    public  void btnNextClick(View v)
-    {
+    public  void btnNextClick(View v) {
         // checking for last page
         // if last page home screen will be launched
         int current = getItem(1);
@@ -105,7 +103,7 @@ public class TutorialActivity extends AppCompatActivity implements View.OnClickL
             // changing the next button text 'NEXT' / 'GOT IT'
             if (position == layouts.length - 1) {
                 // last page. make button text to GOT IT
-                btnNext.setText(getString(R.string.start));
+                btnNext.setText(getString(R.string.next));
                 btnSkip.setVisibility(View.GONE);
                 btn_node.setVisibility(View.VISIBLE);
             } else {

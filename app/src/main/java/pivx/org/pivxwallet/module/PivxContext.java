@@ -3,12 +3,16 @@ package pivx.org.pivxwallet.module;
 import android.os.Environment;
 import android.text.format.DateUtils;
 
+import com.zerocoinj.core.context.ZerocoinContext;
+
 import org.pivxj.core.Context;
 import org.pivxj.core.NetworkParameters;
 import org.pivxj.params.MainNetParams;
 import org.pivxj.params.TestNet3Params;
 
 import java.io.File;
+
+import pivx.org.pivxwallet.AndroidJniBridge;
 
 /**
  * Created by furszy on 6/4/17.
@@ -17,20 +21,33 @@ import java.io.File;
 public class PivxContext {
 
     public static final boolean IS_TEST = false;
-    public static final NetworkParameters NETWORK_PARAMETERS = IS_TEST? TestNet3Params.get():MainNetParams.get();
+    public static final NetworkParameters NETWORK_PARAMETERS = IS_TEST? TestNet3Params.get(): MainNetParams.get();
     /** Pivxj global context. */
     public static final Context CONTEXT = new Context(NETWORK_PARAMETERS);
+
+    // Zerocoin wallet features activation.
+    public static final boolean IS_ZEROCOIN_WALLET_ACTIVE = false;
+
+    // Peers dns discovery
+    public static final boolean IS_DNS_DISCOVERY_ENABLED_BY_DEFAULT = true;
+
+    {
+        CONTEXT.zerocoinContext = new ZerocoinContext(new AndroidJniBridge());
+    }
 
     public static final String DEFAULT_RATE_COIN = "USD";
     public static final long RATE_UPDATE_TIME = 72000000;
 
     public static final String ENABLE_BIP44_APP_VERSION = "1.03";
 
-    /** Pivx wallet released time */
+    /** PIVX wallet released time */
     public static final long PIVX_WALLET_APP_RELEASED_ON_PLAY_STORE_TIME = 1500940800;
 
+    /** Currency exchange rate */
+    public static final String URL_FIAT_CURRENCIES_RATE = "https://bitpay.com/rates";
+
     // report mail
-    public static final String REPORT_EMAIL = "matiasfurszyfer@gmail.com";
+    public static final String REPORT_EMAIL = "furszy@pivx.org";
     /** Subject line for manually reported issues. */
     public static final String REPORT_SUBJECT_ISSUE = "Reported issue";
 
@@ -73,6 +90,6 @@ public class PivxContext {
     /** Maximum size of backups. Files larger will be rejected. */
     public static final long BACKUP_MAX_CHARS = 10000000;
 
-    /** MAX TIME WAITED TO SAY THAT THE APP IS NOT SYNCHED ANYMORE.. in millis*/
+    /** MAX TIME WAITED TO SAY THAT THE APP IS NOT SYNCED ANYMORE.. in millis*/
     public static final long OUT_OF_SYNC_TIME = 60000; // 1 minute
 }

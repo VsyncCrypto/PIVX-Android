@@ -10,11 +10,13 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.ArrayList;
 
+import global.store.AbstractDbDao;
+
 /**
  * Created by furszy on 6/6/17.
  */
 
-public abstract class AbstractSqliteDb<T> extends SQLiteOpenHelper {
+public abstract class AbstractSqliteDb<T> extends SQLiteOpenHelper implements AbstractDbDao<T> {
 
     public AbstractSqliteDb(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
@@ -65,10 +67,10 @@ public abstract class AbstractSqliteDb<T> extends SQLiteOpenHelper {
         db.update(getTableName(),contentValues,whereColumn+"=?",new String[]{whereValue});
     }
 
-    public void updateByKey(String whereColumn,String whereValue, T t) {
+    public int updateByKey(String whereColumn,String whereValue, T t) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = buildContent(t);
-        db.update(getTableName(),contentValues,whereColumn+"=?",new String[]{whereValue});
+        return db.update(getTableName(),contentValues,whereColumn+"=?",new String[]{whereValue});
     }
 
     public int updateFieldByKey(String whereColumn,String whereValue, String updateColumn, String updateValue) {
@@ -88,6 +90,11 @@ public abstract class AbstractSqliteDb<T> extends SQLiteOpenHelper {
         return db.delete(getTableName(),
                 keyColumn+" = ? ",
                 new String[] { columnValue });
+    }
+
+    public void truncate(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(getTableName(),null,null);
     }
 
     protected abstract String getTableName();

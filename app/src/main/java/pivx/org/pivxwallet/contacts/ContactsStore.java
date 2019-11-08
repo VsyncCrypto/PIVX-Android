@@ -10,13 +10,17 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import global.AddressLabel;
+import global.store.ContactsStoreDao;
 
 /**
  * Created by furszy on 6/22/17.
  */
 
-public class ContactsStore extends AbstractSqliteDb<AddressLabel>{
+public class ContactsStore extends AbstractSqliteDb<AddressLabel> implements ContactsStoreDao<AddressLabel> {
 
     private static final String DATABASE_NAME = "db";
     private static final int DATABASE_VERSION = 2;
@@ -128,5 +132,16 @@ public class ContactsStore extends AbstractSqliteDb<AddressLabel>{
 
     public void delete(AddressLabel data) {
         delete(KEY_ADDRESS,data.getAddresses().get(0));
+    }
+
+    // TODO: Check this..
+    @Override
+    public List<AddressLabel> getMyAddresses() {
+        return null;
+    }
+
+    @Override
+    public List<AddressLabel> getContacts() {
+        return list();
     }
 }

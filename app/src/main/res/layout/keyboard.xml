@@ -200,6 +200,7 @@
             android:textSize="24sp"
             android:text="@string/number_zero"
             android:textIsSelectable="false" />
+
         <ImageView
             android:id="@+id/key_backspace"
             android:layout_weight="1"
@@ -209,7 +210,7 @@
             android:paddingBottom="18dp"
             android:gravity="center"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_keyboard_back"
+            android:src="@drawable/ic_keyboard_next"
             android:textIsSelectable="false" />
 
 

@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -18,15 +19,18 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import chain.BlockchainState;
 import pivx.org.pivxwallet.BuildConfig;
 import pivx.org.pivxwallet.R;
 import pivx.org.pivxwallet.ui.contacts_activity.ContactsActivity;
 import pivx.org.pivxwallet.ui.donate.DonateActivity;
-import pivx.org.pivxwallet.ui.settings_activity.SettingsActivity;
+import pivx.org.pivxwallet.ui.settings.settings_activity.SettingsActivity;
 import pivx.org.pivxwallet.ui.wallet_activity.WalletActivity;
+import pivx.org.pivxwallet.utils.NavigationUtils;
 
+import static pivx.org.pivxwallet.module.PivxContext.IS_ZEROCOIN_WALLET_ACTIVE;
 import static pivx.org.pivxwallet.module.PivxContext.OUT_OF_SYNC_TIME;
 import static pivx.org.pivxwallet.service.IntentsConstants.ACTION_NOTIFICATION;
 import static pivx.org.pivxwallet.service.IntentsConstants.INTENT_BROADCAST_DATA_BLOCKCHAIN_STATE;
@@ -45,7 +49,9 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
     private TextView txt_sync_status;
     private ImageView img_sync;
 
-    private BlockchainState blockchainState = BlockchainState.SYNCING;
+    private int posChecked = 0;
+
+    protected BlockchainState blockchainState = BlockchainState.SYNCING;
 
     private BroadcastReceiver walletServiceReceiver = new BroadcastReceiver() {
         @Override
@@ -53,12 +59,12 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
             if (intent.hasExtra(INTENT_BROADCAST_DATA_TYPE)){
                 if (intent.getStringExtra(INTENT_BROADCAST_DATA_TYPE).equals(INTENT_BROADCAST_DATA_BLOCKCHAIN_STATE)) {
                     BlockchainState blockchainStateNew = (BlockchainState) intent.getSerializableExtra(INTENT_EXTRA_BLOCKCHAIN_STATE);
-                    onBlockchainStateChange();
                     if (blockchainStateNew == null) {
                         Log.e("APP", "blockchain state null..");
                         return;
                     }
                     blockchainState = blockchainStateNew;
+                    onBlockchainStateChange();
                     updateBlockchainState();
                 }else if(intent.getStringExtra(INTENT_BROADCAST_DATA_TYPE).equals(INTENT_BROADCAST_DATA_PEER_CONNECTED)){
                     checkState();
@@ -99,11 +105,11 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
     private void checkState(){
         long now = System.currentTimeMillis();
         long lastBlockTime = pivxApplication.getAppConf().getLastBestChainBlockTime();
-        if (lastBlockTime+OUT_OF_SYNC_TIME>now){
+        if (lastBlockTime + OUT_OF_SYNC_TIME > now){
             // check if i'm syncing or i'm synched
             long peerHeight = pivxModule.getConnectedPeerHeight();
-            if (peerHeight!=-1){
-                if (pivxModule.getChainHeight()+10>peerHeight) {
+            if (peerHeight != -1){
+                if (pivxModule.getChainHeight() +10 > peerHeight) {
                     blockchainState = BlockchainState.SYNC;
                 }else {
                     blockchainState = BlockchainState.SYNCING;
@@ -114,8 +120,8 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
         }else {
             if (pivxModule.isAnyPeerConnected()) {
                 long peerHeight = pivxModule.getConnectedPeerHeight();
-                if (peerHeight!=-1){
-                    if (pivxModule.getChainHeight()+10>peerHeight) {
+                if (peerHeight != -1){
+                    if (pivxModule.getChainHeight() +10 > peerHeight) {
                         blockchainState = BlockchainState.SYNC;
                     }else {
                         blockchainState = BlockchainState.SYNCING;
@@ -199,27 +205,41 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
 
         if (id == R.id.nav_wallet) {
             Intent intent = new Intent(this,WalletActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.putExtra("Private",false);
             startActivity(intent);
-            finish();
         } else if (id == R.id.nav_address) {
             startActivity(new Intent(this, ContactsActivity.class));
+        } else if (id == R.id.nav_privacy){
+            if (IS_ZEROCOIN_WALLET_ACTIVE) {
+                Intent myintent = new Intent(this, WalletActivity.class);
+                myintent.putExtra("Private", true);
+                startActivity(myintent);
+            }else {
+                Toast.makeText(this, "Zerocoin features not enabled\n\nWaiting for new PIVX network update",Toast.LENGTH_LONG).show();
+                drawer.closeDrawer(GravityCompat.START);
+                return false;
+            }
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
-        } else if (id == R.id.nav_donations){
-            startActivity(new Intent(this, DonateActivity.class));
         }
+
+        finish();
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
     protected void setNavigationMenuItemChecked(int pos){
+        posChecked = pos;
         navigationView.getMenu().getItem(pos).setChecked(true);
     }
 
     private void updateBlockchainState() {
-        if (txt_sync_status!=null) {
+        // Check if the activity is on foreground
+        if (!isOnForeground)return;
+
+        if (txt_sync_status != null) {
             String text = null;
             int color = 0;
             int imgSrc = 0;
@@ -227,17 +247,17 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
             switch (blockchainState) {
                 case SYNC:
                     text = getString(R.string.sync);
-                    color = Color.parseColor("#ffffffff");
+                    color = getResources().getColor(R.color.white);
                     imgSrc = 0;
                     break;
                 case SYNCING:
                     text = getString(R.string.syncing)+" "+progress+"%";
-                    color = Color.parseColor("#f6a623");
-                    imgSrc = R.drawable.ic_header_unsynced;
+                    color = getResources().getColor(R.color.white_a_60);
+                    imgSrc = R.drawable.ic_header_synced;
                     break;
                 case NOT_CONNECTION:
                     text = getString(R.string.not_connection);
-                    color = Color.parseColor("#f6a623");
+                    color = getResources().getColor(R.color.white_a_60);
                     imgSrc = R.drawable.ic_header_unsynced;
                     break;
             }
@@ -251,7 +271,7 @@ public class BaseDrawerActivity extends PivxActivity implements NavigationView.O
         }
     }
 
-    private double calculateBlockchainSyncProgress() {
+    protected double calculateBlockchainSyncProgress() {
         long nodeHeight = pivxModule.getConnectedPeerHeight();
         if (nodeHeight>0){
             // calculate the progress

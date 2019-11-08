@@ -24,7 +24,7 @@ import org.pivxj.uri.PivxURI;
 
 import pivx.org.pivxwallet.PivxApplication;
 import pivx.org.pivxwallet.R;
-import pivx.org.pivxwallet.module.PivxModule;
+import global.PivxModule;
 
 import static android.graphics.Color.WHITE;
 import static pivx.org.pivxwallet.utils.AndroidUtils.copyToClipboard;
@@ -58,6 +58,7 @@ public class MyAddressFragment extends Fragment implements View.OnClickListener 
         module = PivxApplication.getInstance().getModule();
         root = inflater.inflate(R.layout.my_address,null);
         txt_address = (TextView) root.findViewById(R.id.txt_address);
+        txt_address.setOnClickListener(this);
         btn_share = (Button) root.findViewById(R.id.btn_share);
         btn_copy = (Button) root.findViewById(R.id.btn_copy);
         btn_copy.setOnClickListener(this);
@@ -102,7 +103,6 @@ public class MyAddressFragment extends Fragment implements View.OnClickListener 
             int px = convertDpToPx(r,225);
             Log.i("Util",uri);
             qrBitmap = encodeAsBitmap(uri, px, px, Color.parseColor("#1A1A1A"), WHITE );
-            //Cache.setQrBigBitmapCache(qrBitmap);
         }
         img_qr.setImageBitmap(qrBitmap);
         txt_address.setText(addressStr);
@@ -129,7 +129,7 @@ public class MyAddressFragment extends Fragment implements View.OnClickListener 
         }else if(id == R.id.img_qr){
             copyToClipboard(getActivity(),address.toBase58());
             Toast.makeText(v.getContext(), R.string.copy_message,Toast.LENGTH_LONG).show();
-        }else if (id == R.id.btn_copy){
+        }else if (id == R.id.btn_copy || id == R.id.txt_address ){
             copyToClipboard(getActivity(),address.toBase58());
             Toast.makeText(v.getContext(), R.string.copy_message, Toast.LENGTH_LONG).show();
         }

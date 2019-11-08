@@ -3,6 +3,7 @@ package pivx.org.pivxwallet.utils;
 import android.content.SharedPreferences;
 
 import pivtrum.PivtrumPeerData;
+import pivx.org.pivxwallet.module.PivxContext;
 
 import static pivx.org.pivxwallet.module.PivxContext.DEFAULT_RATE_COIN;
 
@@ -24,6 +25,7 @@ public class AppConf extends Configurations {
     private static final String LAST_BEST_CHAIN_BLOCK_TIME = "last_best_chain_block_time";
     private static final String SPLASH_SOUND = "splash_sound";
     private static final String SHOW_REPORT_ON_START = "show_report";
+
 
 
     public AppConf(SharedPreferences prefs) {
@@ -60,6 +62,12 @@ public class AppConf extends Configurations {
             return new PivtrumPeerData(host,tcp,ssl);
         }else
             return null;
+    }
+
+    public void cleanTrustedNode() {
+        remove(TRUSTED_NODE_HOST);
+        remove(TRUSTED_NODE_TCP);
+        remove(TRUSTED_NODE_SSL);
     }
 
     public void setSelectedRateCoin(String coin){
@@ -102,5 +110,4 @@ public class AppConf extends Configurations {
     public boolean getShowReportOnStart(){
         return getBoolean(SHOW_REPORT_ON_START,false);
     }
-
 }

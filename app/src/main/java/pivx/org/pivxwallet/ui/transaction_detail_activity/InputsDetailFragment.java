@@ -13,10 +13,11 @@ import java.util.List;
 import java.util.Set;
 
 import pivx.org.pivxwallet.R;
+import pivx.org.pivxwallet.module.PivxContext;
 import pivx.org.pivxwallet.ui.base.BaseRecyclerFragment;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerAdapter;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerViewHolder;
-import pivx.org.pivxwallet.ui.transaction_send_activity.custom.inputs.InputWrapper;
+import global.wrappers.InputWrapper;
 import wallet.exceptions.TxNotFoundException;
 
 /**
@@ -29,6 +30,7 @@ public class InputsDetailFragment extends BaseRecyclerFragment<InputWrapper> {
 
     private Set<InputWrapper> list;
     private BaseRecyclerAdapter adapter;
+    private int myPosition;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,9 +62,10 @@ public class InputsDetailFragment extends BaseRecyclerFragment<InputWrapper> {
 
     @Override
     protected BaseRecyclerAdapter<InputWrapper, ? extends BaseRecyclerViewHolder> initAdapter() {
+        String myInputs = getResources().getString(R.string.input);
         adapter = new BaseRecyclerAdapter<InputWrapper, FragmentTxDetail.DetailOutputHolder>(getActivity()) {
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy HH:mm");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 
             @Override
             protected FragmentTxDetail.DetailOutputHolder createHolder(View itemView, int type) {
@@ -76,8 +79,9 @@ public class InputsDetailFragment extends BaseRecyclerFragment<InputWrapper> {
 
             @Override
             protected void bindHolder(final FragmentTxDetail.DetailOutputHolder holder, final InputWrapper data, int position) {
-                holder.txt_num.setText("Position "+position);
-                holder.txt_address.setText(data.getLabel());
+                myPosition = position +1;
+                holder.txt_num.setText(myInputs + " " +myPosition);
+                holder.txt_address.setText(data.getLabel(PivxContext.NETWORK_PARAMETERS));
                 holder.txt_value.setText(data.getUnspent().getValue().toFriendlyString());
             }
         };

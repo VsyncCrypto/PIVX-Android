@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Set;
 
 import pivx.org.pivxwallet.R;
+import pivx.org.pivxwallet.module.PivxContext;
 import pivx.org.pivxwallet.ui.base.BaseRecyclerFragment;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerAdapter;
 import pivx.org.pivxwallet.ui.base.tools.adapter.BaseRecyclerViewHolder;
+import global.wrappers.InputWrapper;
 import wallet.exceptions.TxNotFoundException;
 
 /**
@@ -135,7 +137,7 @@ public class InputsFragment extends BaseRecyclerFragment<InputsFragment.InputSel
     protected BaseRecyclerAdapter<InputSelectionWrapper, ? extends BaseRecyclerViewHolder> initAdapter() {
         adapter = new BaseRecyclerAdapter<InputSelectionWrapper, BaseRecyclerViewHolder>(getActivity()) {
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy HH:mm");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
 
             @Override
             protected BaseRecyclerViewHolder createHolder(View itemView, int type) {
@@ -177,7 +179,7 @@ public class InputsFragment extends BaseRecyclerFragment<InputsFragment.InputSel
 
                     data.setSelected(found);
 
-                    inputHolder.txt_address.setText(data.getInputWrapper().getLabel());
+                    inputHolder.txt_address.setText(data.getInputWrapper().getLabel(PivxContext.NETWORK_PARAMETERS));
                     inputHolder.txt_amount.setText(data.getInputWrapper().getUnspent().getValue().toFriendlyString());
                     inputHolder.txt_confirmations_amount.setText(data.getInputWrapper().getUnspent().getParentTransactionDepthInBlocks()+" "+getString(R.string.confimations));
                     inputHolder.txt_date.setText(simpleDateFormat.format(data.getInputWrapper().getUnspent().getParentTransaction().getUpdateTime()));

@@ -11,10 +11,9 @@ import android.support.v7.app.AppCompatActivity;
 
 import pivx.org.pivxwallet.PivxApplication;
 import pivx.org.pivxwallet.R;
-import pivx.org.pivxwallet.module.PivxModule;
-import pivx.org.pivxwallet.service.IntentsConstants;
+import global.PivxModule;
 import pivx.org.pivxwallet.ui.base.dialogs.SimpleTextDialog;
-import pivx.org.pivxwallet.utils.DialogBuilder;
+import pivx.org.pivxwallet.ui.loading.LoadingActivity;
 import pivx.org.pivxwallet.utils.DialogsUtil;
 
 import static pivx.org.pivxwallet.service.IntentsConstants.ACTION_STORED_BLOCKCHAIN_ERROR;
@@ -32,6 +31,8 @@ public class PivxActivity extends AppCompatActivity {
     protected LocalBroadcastManager localBroadcastManager;
     private static final IntentFilter intentFilter = new IntentFilter(ACTION_TRUSTED_PEER_CONNECTION_FAIL);
     private static final IntentFilter errorIntentFilter = new IntentFilter(ACTION_STORED_BLOCKCHAIN_ERROR);
+
+    protected boolean isOnForeground = false;
 
     private BroadcastReceiver trustedPeerConnectionDownReceiver = new BroadcastReceiver() {
         @Override
@@ -58,13 +59,28 @@ public class PivxActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        localBroadcastManager.registerReceiver(trustedPeerConnectionDownReceiver,intentFilter);
-        localBroadcastManager.registerReceiver(trustedPeerConnectionDownReceiver,errorIntentFilter);
+
+        if (isCoreNeeded()) {
+            if (!pivxApplication.isCoreStarted()) {
+                Intent intent = new Intent(this, LoadingActivity.class);
+                startActivity(intent);
+                finish();
+            } else {
+                isOnForeground = true;
+                localBroadcastManager.registerReceiver(trustedPeerConnectionDownReceiver, intentFilter);
+                localBroadcastManager.registerReceiver(trustedPeerConnectionDownReceiver, errorIntentFilter);
+            }
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        isOnForeground = false;
         localBroadcastManager.unregisterReceiver(trustedPeerConnectionDownReceiver);
+    }
+
+    public boolean isCoreNeeded(){
+        return true;
     }
 }
